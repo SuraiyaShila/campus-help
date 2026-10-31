@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="img/bup-logo.png">
+<title>BUP Assist - Campus Emergency Help & Resource Management</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+ <div class="card-box" style="width:min(400px,92vw)">
+  <div class="text-center mb-3"><img src="img/bup-logo.png" alt="Bangladesh University of Professionals logo" class="login-logo"></div>
+  <h2 class="brand p-0 mb-1 text-center">BUP Assist</h2>
+  <p class="text-muted text-center mb-4">Sign in to get campus help or respond to requests.</p>
+  <label class="form-label">University ID</label>
+  <input id="uid" class="form-control mb-3" placeholder="e.g. 24549010081">
+  <label class="form-label">Password</label>
+  <input id="pw" type="password" class="form-control mb-3">
+  <label class="form-label">Role</label>
+  <select id="role" class="form-select mb-4">
+   <option>Student</option><option>Faculty</option><option>Campus Security</option>
+   <option>Medical Staff</option><option>Hostel Authority</option><option>Administrator</option>
+  </select>
+  <button class="btn btn-green w-100" onclick="login()">Sign in</button>
+  <p class="text-center small mt-3 mb-0">New here? <a href="#" onclick="showRegister();return false">Create an account</a></p>
+ </div>
+</div>
+
+<!-- REGISTER -->
+<div id="register" style="display:none">
+ <div class="card-box auth-card">
+  <div class="text-center mb-2"><img src="img/bup-logo.png" alt="Bangladesh University of Professionals logo" class="login-logo reg-logo"></div>
+  <h2 class="brand p-0 mb-1 text-center">Create account</h2>
+  <p class="text-muted text-center mb-3">Register to use BUP Assist.</p>
+  <div id="reg-err" class="alert alert-danger py-2 d-none" role="alert"></div>
+  <div class="row g-3">
+   <div class="col-12"><label class="form-label">Full name</label>
+    <input id="reg-name" class="form-control" autocomplete="name"></div>
+   <div class="col-sm-6"><label class="form-label">University ID</label>
+    <input id="reg-id" class="form-control" placeholder="e.g. 24549010081"></div>
+   <div class="col-sm-6"><label class="form-label">Role</label>
+    <select id="reg-role" class="form-select">
+     <option>Student</option><option>Faculty</option><option>Campus Security</option>
+     <option>Medical Staff</option><option>Hostel Authority</option></select></div>
+   <div class="col-sm-6"><label class="form-label">Email</label>
+    <input id="reg-email" type="email" class="form-control" autocomplete="email"></div>
+   <div class="col-sm-6"><label class="form-label">Mobile number</label>
+    <input id="reg-phone" type="tel" class="form-control" placeholder="01XXXXXXXXX"></div>
+   <div class="col-12"><label class="form-label">Department / Hostel <span class="text-muted">(optional)</span></label>
+    <input id="reg-dept" class="form-control" placeholder="e.g. ICT, FST"></div>
+   <div class="col-sm-6"><label class="form-label">Password</label>
+    <input id="reg-pw" type="password" class="form-control" autocomplete="new-password" placeholder="At least 8 characters"></div>
+   <div class="col-sm-6"><label class="form-label">Confirm password</label>
+    <input id="reg-pw2" type="password" class="form-control" autocomplete="new-password"></div>
+  </div>
+  <p class="small text-muted mt-3 mb-0">Administrator accounts are created by the IT/System Admin team.</p>
+  <button class="btn btn-green w-100 mt-3" onclick="register()">Create account</button>
+  <p class="text-center small mt-3 mb-0">Already have an account? <a href="#" onclick="showLogin();return false">Sign in</a></p>
+ </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+ <aside class="side">
+  <div class="brand d-flex align-items-center gap-2"><img src="img/bup-logo.png" alt="BUP logo" class="side-logo">BUP Assist</div>
+  <nav id="nav"></nav>
+  <div class="mt-auto small text-muted px-2"><div id="who" class="fw-semibold text-dark"></div><a href="#" onclick="logout()">Sign out</a></div>
+ </aside>
+ <nav id="bottomnav"></nav>
+
+ <main class="main">
+  <!-- OVERVIEW -->
+  <section id="v-overview" class="view">
+   <h3 class="mb-4">Hello, <span id="hello"></span></h3>
+   <div class="row g-3">
+    <div class="col-lg-5"><div class="card-box text-center py-4">
+      <button class="sos" onclick="sendSOS()" aria-label="Send SOS">SOS</button>
+      <p class="mt-4 mb-0 text-muted">One tap shares your location with responders.</p>
+    </div></div>
+    <div class="col-lg-7"><div class="card-box h-100">
+      <h5>Recent requests</h5><div id="recent"></div>
+    </div></div>
+   </div>
+  </section>
+
+  <!-- EMERGENCY -->
+  <section id="v-emergency" class="view">
+   <h3 class="mb-3">Emergency help</h3>
+   <div class="card-box" style="max-width:640px">
+    <label class="form-label">Type</label>
+    <select id="e-type" class="form-select mb-3"><option>Medical</option><option>Security</option><option>Hostel</option></select>
+    <label class="form-label">Location</label>
+    <div class="input-group mb-3"><input id="e-loc" class="form-control" placeholder="e.g. Library, Level 2">
+     <button class="btn btn-outline-secondary" onclick="getLoc()">Use my location</button></div>
+    <label class="form-label">Urgency</label>
+    <select id="e-urg" class="form-select mb-3"><option>Low</option><option>Medium</option><option>High</option></select>
+    <label class="form-label">What happened?</label>
+    <textarea id="e-desc" class="form-control mb-3" rows="3"></textarea>
+    <button class="btn btn-green" onclick="submitEmergency()">Send request</button>
+   </div>
+  </section>
+
+  <!-- REQUESTS -->
+  <section id="v-requests" class="view">
+   <h3 class="mb-3">My requests</h3><div id="reqList"></div>
+  </section>
+
+  <!-- LOST & FOUND -->
+  <section id="v-lost" class="view">
+   <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">Lost & found</h3>
+    <button class="btn btn-green" data-bs-toggle="modal" data-bs-target="#lfModal">Report item</button>
+   </div>
+   <div class="d-flex flex-wrap gap-2 mb-3">
+    <div class="btn-group"><button class="btn btn-outline-success active" id="tab-Lost" onclick="setTab('Lost')">Lost</button>
+     <button class="btn btn-outline-success" id="tab-Found" onclick="setTab('Found')">Found</button></div>
+    <input id="lf-q" class="form-control" style="max-width:260px" placeholder="Search items" oninput="renderLF()">
+    <select id="lf-cat" class="form-select" style="max-width:180px" onchange="renderLF()">
+     <option value="">All categories</option><option>Electronics</option><option>Stationery</option><option>ID & Cards</option><option>Other</option></select>
+   </div>
+   <div class="row g-3" id="lfList"></div>
+  </section>
+
+  <!-- RESOURCES -->
+  <section id="v-resources" class="view">
+   <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">Resources</h3>
+    <button class="btn btn-green" data-bs-toggle="modal" data-bs-target="#resModal">Post resource</button>
+   </div>
+   <input id="r-q" class="form-control mb-3" style="max-width:300px" placeholder="Search books, chargers, calculators" oninput="renderRes()">
+   <div class="row g-3" id="resList"></div>
+  </section>
+
+  <!-- NOTIFICATIONS -->
+  <section id="v-notif" class="view">
+   <h3 class="mb-3">Notifications</h3><div id="notifList"></div>
+  </section>
+
+  <!-- RESPONDER -->
+  <section id="v-responder" class="view">
+   <h3 class="mb-3">Incoming requests</h3><div id="respList"></div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="v-admin" class="view">
+   <h3 class="mb-3">Admin dashboard</h3>
+   <div class="row g-3 mb-3" id="sumCards"></div>
+   <div class="row g-3">
+    <div class="col-lg-6"><div class="card-box"><h5>Peak request times</h5><div id="peak"></div></div></div>
+    <div class="col-lg-6"><div class="card-box"><h5>Common lost-item categories</h5><div id="cats"></div></div></div>
+    <div class="col-12"><div class="card-box"><h5>Users and roles</h5>
+     <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Name</th><th>ID</th><th>Role</th></tr></thead><tbody id="userTbl"></tbody></table></div></div></div>
+   </div>
+  </section>
+ </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal fade" id="lfModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content p-3">
+ <h5>Report item</h5>
+ <select id="lf-type" class="form-select my-2"><option>Lost</option><option>Found</option></select>
+ <input id="lf-name" class="form-control mb-2" placeholder="Item name">
+ <select id="lf-c" class="form-select mb-2"><option>Electronics</option><option>Stationery</option><option>ID & Cards</option><option>Other</option></select>
+ <input id="lf-place" class="form-control mb-3" placeholder="Where?">
+ <button class="btn btn-green" data-bs-dismiss="modal" onclick="addLF()">Submit report</button>
+</div></div></div>
+
+<div class="modal fade" id="resModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content p-3">
+ <h5>Post resource</h5>
+ <input id="rs-name" class="form-control my-2" placeholder="Resource name">
+ <input id="rs-owner" class="form-control mb-3" placeholder="Where can it be collected?">
+ <button class="btn btn-green" data-bs-dismiss="modal" onclick="addRes()">Post resource</button>
+</div></div></div>
+
+<div class="toast-container position-fixed top-0 end-0 p-3"><div id="toast" class="toast text-bg-dark"><div class="toast-body" id="toastMsg"></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
