@@ -96,6 +96,7 @@ function go(k){
  if(k==='lost'&&REVIEWERS.includes(user.role))loadClaims();
  if(['resources','admin'].includes(k))loadResources();
  if(k==='resources')loadResRequests();
+ if(k==='overview')loadNotifs();
  if(k==='notif')loadNotifs(true);
  if(k==='admin')loadAdmin();
 }
@@ -300,6 +301,7 @@ function renderAdmin(){
 }
 
 /* ---------- Notifications ---------- */
+let lastUnread=null;
 async function loadNotifs(markSeen){
  if(!user.id)return;
  try{notifItems=await api('/notifications?universityId='+encodeURIComponent(user.id))}catch(e){return}
@@ -309,11 +311,37 @@ async function loadNotifs(markSeen){
  if(markSeen){try{localStorage.setItem(key,String(Date.now()))}catch(e){}}
  const unread=markSeen?0:notifItems.filter(n=>n.time>shownSince).length;
  document.querySelectorAll('[data-k="notif"]').forEach(b=>{b.innerHTML='Notifications'+(unread?` <span class="badge text-bg-danger ms-1">${unread}</span>`:'')});
+ updateBell(unread);
+ if(lastUnread!==null&&unread>lastUnread){const top=notifItems.find(n=>n.time>shownSince);toast('New notification: '+(top?top.message:''))}
+ lastUnread=unread;
  notifSeen=shownSince;
  renderNotifs();
 }
+function updateBell(n){
+ const c=$('bellCount');if(!c)return;
+ c.textContent=n>9?'9+':String(n);
+ c.classList.toggle('d-none',!n);
+}
+function noteTarget(n){
+ if(n.type==='emergency')return RESPONDER_ROLES.includes(user.role)?'responder':'requests';
+ if(n.type==='lostfound')return 'lost';
+ if(n.type==='resource')return 'resources';
+ return 'notif';
+}
+function timeAgo(t){
+ const m=Math.floor((Date.now()-t)/60000);
+ if(m<1)return 'Just now';
+ if(m<60)return m+' min ago';
+ const h=Math.floor(m/60);
+ if(h<24)return h+' hr ago';
+ return new Date(t).toLocaleDateString([],{day:'numeric',month:'short'});
+}
 function renderNotifs(){
- $('notifList').innerHTML=notifItems.length?notifItems.map(n=>`<div class="card-box mb-2 d-flex justify-content-between gap-3"><div>${esc(n.message)}<div class="text-muted small">${new Date(n.time).toLocaleString([],{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</div></div>${n.time>notifSeen?'<span class="badge text-bg-danger align-self-start">New</span>':''}</div>`).join(''):'<p class="text-muted">No notifications yet.</p>';
+ const when=n=>new Date(n.time).toLocaleString([],{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+ const isNew=n=>n.time>notifSeen?'<span class="badge text-bg-danger align-self-start">New</span>':'';
+ $('notifList').innerHTML=notifItems.length?notifItems.map(n=>`<div class="card-box mb-2 d-flex justify-content-between gap-3" role="button" onclick="go('${noteTarget(n)}')"><div>${esc(n.message)}<div class="text-muted small">${when(n)}</div></div>${isNew(n)}</div>`).join(''):'<p class="text-muted">No notifications yet.</p>';
+ const dn=$('dashNotifs');
+ if(dn)dn.innerHTML=notifItems.length?notifItems.slice(0,4).map(n=>`<div class="d-flex justify-content-between gap-3 border-bottom py-2" role="button" onclick="go('${noteTarget(n)}')"><div>${esc(n.message)}<div class="text-muted small">${timeAgo(n.time)}</div></div>${isNew(n)}</div>`).join(''):'<p class="text-muted mb-0">No notifications yet.</p>';
 }
 function render(){
  $('recent').innerHTML=requests.slice(0,3).map(r=>`<div class="d-flex justify-content-between border-bottom py-2"><span>${r.type}: ${r.desc}</span>${badge(r.status)}</div>`).join('')||'<p class="text-muted">No requests yet.</p>';
@@ -324,3 +352,17 @@ function render(){
 
 /* Photo field for the "Report item" form */
 if(!$('lf-photo'))$('lf-place').insertAdjacentHTML('afterend','<label class="form-label small text-muted" for="lf-photo">Photo (optional)</label><input id="lf-photo" type="file" accept="image/*" class="form-control mb-3">');
+
+/* Student dashboard: notification bell and recent notifications */
+(function(){
+ const ov=$('v-overview');
+ if(!ov||$('dashNotifs'))return;
+ const h=ov.querySelector('h3');
+ if(h){
+  const w=document.createElement('div');
+  w.className='d-flex justify-content-between align-items-center mb-4';
+  h.replaceWith(w);h.classList.remove('mb-4');h.classList.add('mb-0');w.appendChild(h);
+  w.insertAdjacentHTML('beforeend','<button id="bellBtn" type="button" class="btn btn-outline-secondary position-relative" onclick="go(\'notif\')" aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span id="bellCount" class="badge text-bg-danger position-absolute top-0 start-100 translate-middle rounded-pill d-none">0</span></button>');
+ }
+ ov.insertAdjacentHTML('beforeend','<div class="card-box mt-3"><div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0">Notifications</h5><a href="#" onclick="go(\'notif\');return false">View all</a></div><div id="dashNotifs"><p class="text-muted mb-0">Loading...</p></div></div>');
+})();
